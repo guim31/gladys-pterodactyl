@@ -196,6 +196,9 @@ export class PanelHub {
   }
 
   async reconfigure(config) {
+    // A reading in progress belongs to the old configuration: let it end
+    // before replacing the client, so it cannot write into the new state.
+    await this.cycle?.catch(() => {});
     const languageChanged = this.config !== null && this.config.language !== config.language;
     this.config = config;
     const signature = clientSignature(config);
@@ -460,7 +463,8 @@ export class PanelHub {
       record.shownState = 'unreachable';
     } else if (err.kind === ERROR_KINDS.CONFLICT) {
       record.state = null;
-      record.shownState = 'installing';
+      record.resources = null;
+      record.shownState = record.server.status ?? 'installing';
     }
     await this.publishStates(record);
     return record.shownState !== before;
@@ -478,16 +482,22 @@ export class PanelHub {
     record.resources = resources;
 
     const running = resources.state !== 'offline';
+    // First: it marks the order as counted, whatever the other signs say.
+    const byOrder = this.restartedByOrder(record, resources, now);
     const restarted =
       previous !== null &&
       previous !== 'offline' &&
       running &&
-      (resources.uptimeMs + this.timings.uptimeToleranceMs < previousUptime + (now - previousAt) ||
+      // Wings reports no uptime while starting or stopping: only two
+      // readings of a running server can compare theirs.
+      ((previous === 'running' &&
+        resources.state === 'running' &&
+        resources.uptimeMs > 0 &&
+        resources.uptimeMs + this.timings.uptimeToleranceMs <
+          previousUptime + (now - previousAt)) ||
         (previous === 'running' && resources.state === 'starting') ||
-        // A restart sent from here: any uptime that went back is it.
-        (record.order?.signal === 'restart' &&
-          record.order.at > previousAt - this.timings.orderMarginMs &&
-          resources.uptimeMs < previousUptime));
+        // A restart sent from here: the process is younger than the order.
+        byOrder);
     if (previous !== null) {
       const ended = (previous !== 'offline' && !running) || restarted;
       if (ended) {
@@ -509,11 +519,24 @@ export class PanelHub {
     // How long the current run lasts, for the events of its end (a server
     // seen stopping already reports no uptime).
     record.runUptimeMs = running ? Math.max(resources.uptimeMs, restarted ? 0 : runUptime) : 0;
-    record.shownState = this.shown(record, resources, previousUptime, now);
+    record.shownState = this.shown(record, resources, now);
+  }
+
+  /** A restart sent from here took effect, counted once. */
+  restartedByOrder(record, resources, now) {
+    const { order } = record;
+    if (order?.signal !== 'restart' || order.counted || resources.state === 'offline') {
+      return false;
+    }
+    if (resources.uptimeMs <= now - order.at) {
+      order.counted = true;
+      return true;
+    }
+    return false;
   }
 
   /** The state to show: the reading, or the order sent while the panel does not show it yet. */
-  shown(record, resources, previousUptime, now) {
+  shown(record, resources, now) {
     const { pending } = record;
     if (!pending) {
       return resources.state;
@@ -524,7 +547,7 @@ export class PanelHub {
       (['stop', 'kill'].includes(pending.signal) &&
         ['offline', 'stopping'].includes(resources.state)) ||
       (pending.signal === 'restart' &&
-        (resources.state !== 'running' || resources.uptimeMs < previousUptime));
+        (resources.state !== 'running' || resources.uptimeMs <= now - record.order.at));
     if (done) {
       record.pending = null;
       return resources.state;
@@ -692,7 +715,10 @@ export class PanelHub {
       return;
     }
     try {
-      await this.gladys.publishTransports(entries);
+      // The SDK takes 100 entries per call.
+      for (let i = 0; i < entries.length; i += 100) {
+        await this.gladys.publishTransports(entries.slice(i, i + 100));
+      }
       for (const entry of entries) {
         this.transports.set(entry.external_id, entry.transport);
       }
@@ -834,10 +860,12 @@ export class PanelHub {
     await this.pollAll();
     const record = this.require(deviceExternalId);
     const language = this.language;
-    const r = record.resources;
+    // A panel or a node that does not answer: nothing current to hand on.
+    const known = !this.panel.down && record.shownState !== 'unreachable';
+    const r = known ? record.resources : null;
     const live = r && record.state !== null && r.state !== 'offline';
     return {
-      running: record.state === 'running',
+      running: known && record.state === 'running',
       state: record.shownState === null ? '' : stateText(record.shownState, language),
       cpu: live ? Math.round(r.cpuPercent * 10) / 10 : 0,
       memory_mb: live ? Math.round(r.memoryBytes / (1024 * 1024)) : 0,
@@ -859,7 +887,14 @@ export class PanelHub {
     for (const [language, words] of Object.entries(REPORT_TEXT)) {
       const status = this.connectionStatus();
       if (!this.client || this.panel.reachable !== true) {
-        message[language] = pick(status.message, language) ?? '';
+        message[language] =
+          this.client && this.panel.error
+            ? labelled(
+                this.client.host,
+                pick(ERROR_TEXT[this.panel.error.kind], language),
+                language,
+              )
+            : (pick(status.message, language) ?? '');
         continue;
       }
       const lines = [labelled(this.client.host, words.servers(this.records.size), language)];

@@ -184,7 +184,11 @@ export class FakePanel {
           disk_bytes: server.diskBytes,
           network_rx_bytes: running ? 6077 : 0,
           network_tx_bytes: running ? 1120 : 0,
-          uptime: running && server.startedAt !== null ? this.now() - server.startedAt : 0,
+          // Wings reports no uptime while starting or stopping (checked).
+          uptime:
+            server.state === 'running' && server.startedAt !== null
+              ? this.now() - server.startedAt
+              : 0,
         },
       },
     });

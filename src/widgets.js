@@ -230,7 +230,7 @@ function single(hub, record, language) {
         action: { confirm: true },
       }),
     );
-  } else if (state === 'stopping' && hub.config.allowKill) {
+  } else if (record.state === 'stopping' && !record.pending && hub.config.allowKill) {
     components.push(
       button('kill', record, language, {
         button: { icon: 'zap-off', style: 'danger' },

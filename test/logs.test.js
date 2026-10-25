@@ -89,13 +89,14 @@ test('a panel that stays down is logged once, and once when it is back', async (
 test('a crash and the orders of the user are one line each', async (t) => {
   const logs = captureLogs(t);
   const w = await world(t);
+  logs.clear();
   await w.fake.sceneAction('start_server', { device: deviceId(w.gladys, w.server) });
   await tick(w, 120_000);
-  logs.clear();
   w.panel.crash(w.server);
   await tick(w, 60_000);
-  assert.equal(logs.lines.length, 1, logs.texts().join('\n'));
-  assert.match(logs.lines[0].text, /"Survival" \([0-9a-f]+\): crashed, restarted by Wings/);
+  assert.equal(logs.lines.length, 2, logs.texts().join('\n'));
+  assert.match(logs.lines[0].text, /"Survival" \([0-9a-f]+\): start sent \(scene\)/);
+  assert.match(logs.lines[1].text, /"Survival" \([0-9a-f]+\): crashed, restarted by Wings/);
 });
 
 test('Gladys refusing the states is logged once', async (t) => {

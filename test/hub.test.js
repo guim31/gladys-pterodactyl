@@ -377,3 +377,70 @@ test('Gladys restarted: everything is sent again', async (t) => {
   await w.hub.resync(w.hub.config);
   assert.ok(w.fake.states.length - before >= 6);
 });
+
+test('a restart ordered soon after a start: started once, the order shown until it shows', async (t) => {
+  const w = await world(t);
+  await running(w, 30_000);
+  await w.fake.sceneAction('restart_server', { device: deviceId(w.gladys, w.server) });
+  assert.equal(state(w, 'state'), 'Starting');
+  await tick(w, 20_000);
+  assert.equal(state(w, 'state'), 'Running');
+  await tick(w, 20_000);
+  await tick(w, 20_000);
+  assert.equal(events(w, TRIGGERS.SERVER_STARTED).length, 2, 'the first start, then the restart');
+  assert.deepEqual(events(w, TRIGGERS.SERVER_CRASHED), []);
+});
+
+test('a slow start (no uptime while starting) is no crash', async (t) => {
+  const w = await world(t, { config: { poll_interval: '60' } });
+  w.server.state = 'starting';
+  w.server.startedAt = w.clock.now();
+  for (let i = 0; i < 3; i += 1) {
+    await tick(w, 60_000);
+  }
+  w.server.state = 'running';
+  await tick(w, 60_000);
+  assert.deepEqual(events(w, TRIGGERS.SERVER_CRASHED), []);
+  assert.equal(events(w, TRIGGERS.SERVER_STARTED).length, 1);
+});
+
+test('running, stopping, stopped: one stop, with the minutes it ran', async (t) => {
+  const w = await world(t);
+  await running(w, 10 * 60_000);
+  w.panel.log(w.server, 'server:power.stop');
+  w.server.state = 'stopping';
+  await tick(w);
+  w.panel.stop(w.server);
+  await tick(w);
+  assert.deepEqual(events(w, TRIGGERS.SERVER_CRASHED), []);
+  assert.deepEqual(
+    events(w, TRIGGERS.SERVER_STOPPED).map((e) => e.uptime_minutes),
+    [10],
+  );
+});
+
+test('a key corrected during a reading: the new key wins', async (t) => {
+  const w = await world(t, { config: { api_key: 'ptlc_wrong' } });
+  assert.equal(w.fake.connectionStatus.connected, false);
+  const reading = w.hub.pollAll();
+  await w.fake.configUpdated({ ...CONFIG });
+  await reading;
+  assert.equal(w.fake.connectionStatus.connected, true);
+  assert.equal(w.hub.records.size, 1);
+});
+
+test('during a panel outage: the report says why, read_server hands nothing stale', async (t) => {
+  const w = await world(t);
+  await running(w);
+  w.panel.down = true;
+  await tick(w);
+  let report = await w.fake.action('test_connection', {});
+  assert.match(report.data.message.en, /^panel\.example\.com: panel unreachable/);
+  await tick(w);
+  const read = await w.fake.sceneAction('read_server', { device: deviceId(w.gladys, w.server) });
+  assert.equal(read.data.outputs.running, false);
+  assert.equal(read.data.outputs.cpu, 0);
+  assert.equal(read.data.outputs.state, 'Unreachable');
+  report = await w.fake.action('test_connection', {});
+  assert.match(report.data.message.fr, /panneau injoignable/);
+});

@@ -129,6 +129,7 @@ test('the scene triggers are the ones the hub fires, with their filters and vari
   const w = await world(t);
   w.clock.advance(60_000);
   w.panel.crash(w.server);
+  w.clock.advance(10_000);
   await w.hub.pollAll();
   await w.fake.sceneAction('stop_server', { device: deviceId(w.gladys, w.server) });
   w.clock.advance(30_000);
