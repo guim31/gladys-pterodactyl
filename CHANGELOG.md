@@ -10,6 +10,8 @@ the notes of the version's GitHub Release.
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-25
+
 ### Added
 
 - One device per server of a Pterodactyl or Pelican panel (client API key):
@@ -27,4 +29,5 @@ the notes of the version's GitHub Release.
 - English, French, German and Spanish everywhere: configuration, devices,
   widget, messages and documentation.
 
-[Unreleased]: https://github.com/guim31/gladys-pterodactyl/commits/main
+[Unreleased]: https://github.com/guim31/gladys-pterodactyl/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/guim31/gladys-pterodactyl/releases/tag/v1.0.0
