@@ -1,67 +1,156 @@
-# Template de démonstration
+# Pterodactyl / Pelican
 
-Ceci est la documentation utilisateur de l'intégration. Gladys ré-héberge ce
-fichier et affiche un lien **Documentation** permanent vers lui dans l'écran
-de configuration (dans la langue de l'utilisateur, avec l'anglais en repli) —
-c'est au moment de configurer que l'utilisateur en a le plus besoin. Gardez
-les courtes indications d'accueil dans les blocs `section` du `config_schema`
-du manifest ; mettez ici le pas-à-pas détaillé (captures d'écran, dépannage…).
+Vos serveurs de jeu d'un panneau [Pterodactyl](https://pterodactyl.io/) (ou de son fork
+[Pelican](https://pelican.dev/)) dans Gladys : leur état, CPU, mémoire, disque et durée de
+fonctionnement, un interrupteur pour les démarrer et les arrêter, des événements de scène quand un
+serveur démarre, s'arrête ou plante, des actions de scène et un widget de tableau de bord. À la
+maison ou chez un hébergeur de jeux qui vend des serveurs Pterodactyl : l'API est la même.
 
-## Ce que vous obtenez
+Testée contre un vrai panneau Pterodactyl 1.15 et Wings (démarrage, arrêt, redémarrage, console, un
+vrai plantage relancé par Wings). Pelican garde la même API client mais n'a pas été testé : vos
+retours sont les bienvenus sur [GitHub](https://github.com/guim31/gladys-pterodactyl/issues).
 
-Six appareils de démonstration apparaissent après l'installation : une
-station météo (vraies données Open-Meteo), un interrupteur, une lampe
-variable, une prise connectée avec mesure de puissance, un détecteur de
-mouvement et une caméra.
+## Prérequis
+
+- Gladys Assistant 5.1 ou plus récent.
+- Un panneau Pterodactyl (1.8 ou plus récent) ou Pelican que Gladys peut joindre.
+- Une **clé API client** de votre compte sur le panneau : **Compte → Identifiants API → Créer**
+  (_Account → API Credentials_). Elle commence par `ptlc_`. Une clé d'application (`ptla_`, de
+  l'administration) ne marche pas. La clé voit les serveurs dont vous êtes propriétaire et ceux
+  partagés avec vous ; un sous-utilisateur a besoin des permissions de ce que fait Gladys (lire le
+  serveur, alimentation, console, activité).
 
 ## Configuration
 
-1. Ouvrez l'onglet **Configuration** de l'intégration.
-2. Renseignez la **latitude** et la **longitude** que la station météo de
-   démonstration doit observer (Paris par défaut), et choisissez votre unité
-   de température. L'**intervalle de rafraîchissement** règle la fréquence
-   de lecture de la station météo et de la puissance de la prise : toutes
-   les 5 minutes par défaut, toutes les minutes au plus.
-3. Enregistrez : les appareils apparaissent dans l'onglet **Découverte**,
-   prêts à être ajoutés.
+### Panneau et clé
 
-Le réglage **Préférer la connexion locale** pilote la prise de
-démonstration : elle affiche en badge le canal réellement utilisé (local ou
-cloud), avec un point orange quand elle fonctionne en mode dégradé (local
-refusé, bascule cloud).
+- **Adresse du panneau** : l'adresse que vous ouvrez dans votre navigateur, ex.
+  `https://panel.example.com` ou `http://192.168.1.20:8080`.
+- **Clé API client (ptlc\_…)** : la clé créée ci-dessus.
+- **Accepter un certificat auto-signé** : seulement pour un panneau à la maison en HTTPS sans
+  certificat public.
 
-## Actions
+Enregistrez : chaque serveur de votre compte apparaît dans l'onglet **Découverte**, prêt à être
+ajouté. **Tester la connexion** liste vos serveurs et leur état.
 
-- **Tester le fournisseur météo** — effectue une requête en direct vers
-  Open-Meteo et affiche la température et l'humidité actuelles sous le
-  bouton.
-- **Identifier un appareil** — choisissez un de vos appareils dans la liste
-  et il se signale (la lampe de démonstration « clignote » dans les logs).
+### Pilotage
 
-## Scènes
+Démarrer, arrêter et redémarrer sont toujours permis, comme sur le panneau. Deux ordres risqués sont
+désactivés par défaut :
 
-L'intégration ajoute ses propres cartes à l'éditeur de scènes (Gladys 5.1
-ou plus récent), dans la catégorie **Intégrations** :
+- **Autoriser l'arrêt forcé** : tue le processus aussitôt, le jeu perd ce qu'il n'a pas
+  sauvegardé.
+- **Autoriser les commandes console** : une scène peut alors taper n'importe quelle commande dans la
+  console d'un serveur, comme un admin.
 
-- **Mouvement détecté** (déclencheur) — lance la scène quand un détecteur
-  de démonstration voit bouger quelque chose. Choisissez éventuellement le
-  détecteur et ce qui a bougé (personne, animal) ; laissés vides, toute
-  détection correspond. Les actions suivantes peuvent lire ce qui a bougé
-  avec `{{triggerEvent.data.target}}`.
-- **Identifier un appareil** (action) — fait se signaler l'appareil choisi.
-  Elle indique si l'appareil a pu se signaler, pour que les actions
-  suivantes puissent en dépendre.
+### Lectures
 
-## Tableau de bord
+- **Intervalle de lecture** : 30 secondes par défaut. Le panneau rafraîchit les chiffres d'un
+  serveur environ toutes les 20 secondes : lire plus vite ne montrerait rien de nouveau. Chaque
+  lecture coûte une requête pour la liste et une par serveur, très loin de la limite du panneau (720
+  requêtes par minute par défaut).
+- **Langue des noms** : des fonctionnalités des appareils et des textes écrits par l'intégration.
 
-Ajoutez le widget **État de la démo** à un tableau de bord : il affiche en
-direct la température de la station météo et la puissance de la prise du
-bureau, la connexion utilisée par la prise (en orange si dégradée) et la
-position observée. Son bouton **Identifier la lampe** fait se signaler la
-lampe de démonstration.
+## Appareils
+
+Un appareil par serveur, avec :
+
+- **Marche** : un interrupteur. Allumé quand le serveur tourne ou démarre ; l'allumer démarre le
+  serveur, l'éteindre l'arrête proprement (jamais un arrêt forcé). Après un ordre, l'interrupteur et
+  l'état l'affichent aussitôt, jusqu'à ce que le panneau le confirme.
+- **État** : Démarré, Démarrage, S'arrête, Arrêté, Suspendu, Installation, Injoignable (le panneau
+  ne joint pas le nœud).
+- **CPU** : compté comme le panneau, 100 % valant un cœur. La jauge monte jusqu'à la limite CPU du
+  serveur, ou 400 % sans limite.
+- **Mémoire** et **Disque** : en mégaoctets.
+- **Durée de fonctionnement** : en heures, 0 à l'arrêt.
+
+CPU et mémoire sont envoyés à Gladys au plus une fois par minute. Les limites du serveur (mémoire,
+disque, CPU) et son nœud sont dans les paramètres de l'appareil. Le badge de l'appareil distingue un
+panneau à la maison d'un panneau sur Internet, et montre un point rouge quand le panneau ou le nœud
+ne répond pas.
+
+## Widget de tableau de bord
+
+**Serveurs de jeu** : sans serveur choisi, une tuile avec les serveurs démarrés et la liste de vos
+serveurs avec leur état, CPU et mémoire (neuf, puis un compte). Avec un serveur choisi dans les
+réglages du widget : son état, son CPU, sa mémoire et sa durée de fonctionnement, ses limites, et les
+boutons qui vont avec son état : **Démarrer**, ou **Redémarrer** et **Arrêter** (confirmés).
+**Forcer l'arrêt** apparaît quand c'est autorisé dans la configuration et que le serveur reste bloqué
+à l'arrêt.
+
+## Déclencheurs de scène
+
+Chacun peut se limiter à un serveur, et donne le nom du serveur, son nœud et son appareil.
+
+- **Un serveur de jeu a démarré** : il tourne, après un démarrage, un redémarrage ou un plantage.
+- **Un serveur de jeu s'est arrêté** : sur un ordre, de Gladys, du panneau ou de sa console (`stop`,
+  `quit`, `exit`…). Avec les minutes de fonctionnement.
+- **Un serveur de jeu a planté** : il s'est arrêté sans aucun ordre. Wings le relance en général
+  aussitôt : cet événement vient alors d'abord, puis **Un serveur de jeu a démarré**. Avec les
+  minutes de fonctionnement.
+
+Comment un plantage est reconnu : le serveur est arrêté, ou sa durée de fonctionnement est repartie
+de zéro, et ni Gladys ni le journal d'activité du panneau ne montrent d'arrêt, d'arrêt forcé ou de
+redémarrage depuis la lecture précédente. Un serveur éteint depuis le jeu (un mod, un plugin) compte
+comme un plantage. Si la clé ne peut pas lire le journal d'activité (un sous-utilisateur sans cette
+permission), un arrêt fait depuis le panneau compte aussi comme un plantage : **Tester la connexion**
+dit dans quel cas vous êtes.
+
+## Actions de scène
+
+- **Démarrer un serveur de jeu**, **Arrêter un serveur de jeu** (arrêt propre), **Redémarrer un
+  serveur de jeu**.
+- **Forcer l'arrêt d'un serveur de jeu** : seulement si c'est autorisé dans la configuration.
+- **Envoyer une commande console** : seulement si c'est autorisé dans la configuration, à un serveur
+  démarré, ex. `say À table !`.
+- **Lire un serveur de jeu** : le lit maintenant et donne aux étapes suivantes s'il tourne, son état,
+  son CPU, sa mémoire, son disque et sa durée de fonctionnement, ex. pour un message ou un « Continuer
+  seulement si » sur Démarré.
+
+Les joueurs ne sont pas dans l'API du panneau : l'intégration
+[Game Servers (GameDig)](https://github.com/guim31/gladys-gamedig) (gladys-gamedig) lit qui joue, les
+arrivées et les départs, pour Minecraft, Valheim et 300 autres jeux.
+
+## Exemples de scènes
+
+- **Le serveur des enfants à l'heure du coucher** : à 21 h les jours d'école, **Envoyer une commande
+  console** `say Le serveur s'arrête dans 5 minutes !`, attendre 5 minutes, **Arrêter un serveur de
+  jeu**.
+- **Alerte de plantage** : déclencheur **Un serveur de jeu a planté** → m'envoyer un message avec le
+  nom du serveur et ses minutes de fonctionnement.
+- **Prêt à jouer** : un bouton du tableau de bord démarre le serveur ; déclencheur **Un serveur de
+  jeu a démarré** → passer les lumières du bureau en vert et envoyer un message avec le nom du
+  serveur.
 
 ## Dépannage
 
-L'intégration journalise tout ce qu'elle fait : consultez les logs de
-l'intégration depuis l'interface Gladys (ou `docker logs` sur l'hôte) avec
-`LOG_LEVEL=debug` pour le détail complet.
+- **« clé API refusée »** : la clé a été supprimée, ou c'est une clé d'application (`ptla_`) : créez
+  une clé client dans **Compte → Identifiants API**.
+- **« panneau injoignable »** : vérifiez l'adresse et le port depuis la machine de Gladys ; un
+  panneau derrière Cloudflare Access ou une page de connexion ne peut pas être lu.
+- **« certificat non reconnu »** : activez **Accepter un certificat auto-signé**, ou utilisez
+  l'adresse publique du panneau.
+- **État « Injoignable »** : le panneau répond mais ne joint pas le nœud (Wings) du serveur.
+- **Aucun serveur dans l'onglet Découverte** : la clé ne voit aucun serveur ; la clé d'un
+  sous-utilisateur ne voit que les serveurs partagés avec lui.
+- Un serveur affiche **Démarrage** après un ordre de démarrage jusqu'à 90 secondes avant que le
+  panneau le confirme : c'est le cache du panneau.
+- Les logs de l'intégration (Intégrations → Pterodactyl / Pelican → Logs) disent ce qui a échoué ;
+  `LOG_LEVEL=debug` montre chaque lecture.
+
+## Limites
+
+- Une lecture toutes les 30 secondes au mieux : un plantage relancé par Wings entre deux lectures se
+  voit à la durée de fonctionnement ; deux plantages entre deux lectures n'en font qu'un.
+- Jusqu'à 200 serveurs par clé.
+- Pas de joueurs (voir gladys-gamedig), ni fichiers, sauvegardes, bases de données ou tâches
+  planifiées.
+- La sortie de la console n'est pas lue : seules des commandes sont envoyées.
+- Sans lien avec Pterodactyl ni Pelican.
+
+## Crédits
+
+Pterodactyl et Pelican sont l'œuvre de leurs équipes. L'API a été lue dans leur documentation et
+vérifiée contre un vrai panneau. Code sous licence Apache 2.0, dans le
+[dépôt de l'intégration](https://github.com/guim31/gladys-pterodactyl).

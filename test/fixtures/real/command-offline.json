@@ -1,0 +1,12 @@
+{
+  "status": 502,
+  "body": {
+    "errors": [
+      {
+        "code": "HttpException",
+        "status": "502",
+        "detail": "Server must be online in order to send commands."
+      }
+    ]
+  }
+}

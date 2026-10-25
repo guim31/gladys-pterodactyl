@@ -1,0 +1,12 @@
+{
+  "status": 409,
+  "body": {
+    "errors": [
+      {
+        "code": "ServerStateConflictException",
+        "status": "409",
+        "detail": "This server is currently suspended and the functionality requested is unavailable."
+      }
+    ]
+  }
+}

@@ -1,0 +1,18 @@
+{
+  "status": 200,
+  "body": {
+    "object": "stats",
+    "attributes": {
+      "current_state": "running",
+      "is_suspended": false,
+      "resources": {
+        "memory_bytes": 544768,
+        "cpu_absolute": 0.002,
+        "disk_bytes": 129,
+        "network_rx_bytes": 5236,
+        "network_tx_bytes": 1120,
+        "uptime": 18487
+      }
+    }
+  }
+}

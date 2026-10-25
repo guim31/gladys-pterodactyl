@@ -1,0 +1,16 @@
+{
+  "status": 422,
+  "body": {
+    "errors": [
+      {
+        "code": "ValidationException",
+        "status": "422",
+        "detail": "The selected signal is invalid.",
+        "meta": {
+          "source_field": "signal",
+          "rule": "in"
+        }
+      }
+    ]
+  }
+}

@@ -32,15 +32,20 @@ pushing.
 
 ```
 index.js                          SDK wiring only: handlers registered before connect()
-src/devices/index.js              registry of the device blueprints + dispatch helpers
-src/devices/<type>.js             one device type per file (buildDevice, onPoll, onSetValue...)
-src/scenes.js                     scene action handlers (manifest `scene_actions`)
-src/widgets.js                    dashboard widget handlers (manifest `widgets`)
+src/app.js                        registers every handler on the hub (tests drive the same wiring)
 src/config.js                     DEFAULT_CONFIG (mirrors the manifest defaults) + normalization
-src/weather.js                    example driver (Open-Meteo)
-gladys-assistant-integration.json manifest: name, config_schema, actions, image...
-docs/en.md, docs/fr.md            user documentation, re-hosted by Gladys (mandatory)
-test/                             node --test, against the SDK's fake Gladys (integration-sdk/testing)
+src/http.js                       the one network function (node:http/https, self-signed opt-in)
+src/panel.js                      client of the Pterodactyl/Pelican client API, error kinds
+src/hub.js                        timer, records, transitions (started/stopped/crashed), orders
+src/devices.js                    device blueprint (features, bounds) and feature states
+src/scenes.js                     scene action handlers (manifest `scene_actions`)
+src/widgets.js                    dashboard widget `servers` (get + button actions)
+src/texts.js                      every text sent outside the widget, four languages
+gladys-assistant-integration.json manifest: name, config_schema, actions, triggers, widget...
+docs/{en,fr,de,es}.md             user documentation, re-hosted by Gladys (mandatory)
+test/                             node --test, against the SDK's fake Gladys and test/helpers/fakePanel.js
+test/fixtures/real                real answers of Pterodactyl 1.15.2 + Wings (anonymized)
+test/real/real-panel.test.js      `npm run test:real`: the whole scenario against a real panel
 .github/scripts/release.mjs       release helpers (manifest bump, changelog), tested in test/
 ```
 
@@ -70,8 +75,9 @@ test/                             node --test, against the SDK's fake Gladys (in
   `type: "provider"`: 5.1.0). `test/manifest.test.js` ties the manifest to the
   code (defaults, action, scene and widget handlers): change both sides
   together.
-- **User-facing text** is bilingual (English and French): action messages,
-  manifest texts, and `docs/en.md` / `docs/fr.md`, kept in sync.
+- **User-facing text** is in four languages (English, French, German with
+  "du", Spanish with "usted"): action messages, manifest texts, and
+  `docs/{en,fr,de,es}.md`, kept in sync. `test/i18n.test.js` checks it.
 - **Style.** Prettier formats, ESLint catches mistakes. Comments explain why,
   in English. Tests never touch the network.
 
@@ -233,3 +239,30 @@ long, et sur un « Sie »/« Ihr… » de politesse en allemand. Le store exige 
 - Docs `en`, `fr`, `de`, `es` avec les mêmes sections.
 - Chauffe, ouverture, sécurité : ne rien rendre pilotable « comme un thermostat » ou par un assistant
   vocal quand une erreur serait dangereuse (leçon d'OctoPrint).
+
+## Pterodactyl / Pelican (vérifié le 25/10/2026 sur Pterodactyl 1.15.2 + Wings réels)
+
+- **API client** seulement (`ptlc_…`, Account → API Credentials), jamais l'API d'application
+  (`ptla_`, admin) : elle ne voit pas les ressources. En-têtes `Authorization: Bearer` et
+  `Accept: Application/vnd.pterodactyl.v1+json`.
+- `GET /api/client` : pages de 50, `meta.pagination.total_pages`. Identité de l'appareil : `uuid`
+  (l'`identifier` de 8 caractères sert aux URL). `status` vaut `null`, `installing`,
+  `install_failed`, `suspended`, `restoring_backup` ; `is_suspended`, `is_installing`,
+  `is_transferring` en plus chez Pterodactyl.
+- `GET …/resources` est **mis en cache ~20 s par le panneau** : un ordre ne s'y voit qu'après. D'où
+  l'état « en attente » affiché après un ordre (90 s au plus) et les lectures de suivi à 10 et 30 s.
+  409 si le serveur s'installe ou est suspendu, **500** (pas 502) si Wings est injoignable.
+- `POST …/power` répond 204 ; `POST …/command` répond **502 « Server must be online »** si le
+  serveur est arrêté.
+- **Plantage** : Wings relance aussitôt un serveur qui plante (s'il a tourné plus d'une minute) ; le
+  panneau peut ne jamais le montrer arrêté, seul l'`uptime` (ms) repart de zéro. Le journal
+  d'activité (`GET …/activity?sort=-timestamp`) n'enregistre que les ordres des utilisateurs
+  (`server:power.start|stop|restart|kill`, `server:console.command` avec `properties.command`), rien
+  pour un plantage : c'est ce qui distingue un arrêt d'un plantage. Marge de 60 s avant la lecture
+  précédente (cache + horloges).
+- Environnement de test réel : panneau `ghcr.io/pterodactyl/panel` + MariaDB + Redis et
+  `ghcr.io/pterodactyl/wings` (socket Docker, `system.machine_id.directory` et dossiers de données
+  au même chemin dans et hors du conteneur, réseau des serveurs déplacé hors de 172.18/16). Serveur
+  léger : œuf Mumble, image `ghcr.io/parkervcp/yolks:alpine`, `skip_scripts`, démarrage
+  `echo "Server listening on…"` puis une boucle qui lit la console (`crash` → `exit 3`).
+- Pelican garde l'API client mais n'a pas été testé.

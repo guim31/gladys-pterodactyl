@@ -1,61 +1,143 @@
-# Demo Devices Template
+# Pterodactyl / Pelican
 
-This is the user documentation of the integration. Gladys re-hosts this file
-and shows a permanent **Documentation** link to it in the Configuration screen
-(in the user's language, with English as the fallback) — it is when
-configuring that the user needs it most. Keep the short onboarding hints in
-the `section` blocks of the manifest `config_schema`; put the long
-step-by-step (screenshots, troubleshooting…) here.
+Your game servers of a [Pterodactyl](https://pterodactyl.io/) panel (or of its fork
+[Pelican](https://pelican.dev/)) in Gladys: their state, CPU, memory, disk and uptime, a switch to
+start and stop them, scene events when a server starts, stops or crashes, scene actions and a
+dashboard widget. At home or at a game host that sells Pterodactyl servers: the API is the same.
 
-## What you get
+Tested against a real Pterodactyl 1.15 panel and Wings (start, stop, restart, console, a real crash
+restarted by Wings). Pelican keeps the same client API but was not tested: feedback welcome on
+[GitHub](https://github.com/guim31/gladys-pterodactyl/issues).
 
-Six demo devices show up after installation: a weather station (real data
-from Open-Meteo), a switch, a dimmable light, a smart plug with power
-metering, a motion sensor and a camera.
+## Requirements
+
+- Gladys Assistant 5.1 or later.
+- A Pterodactyl (1.8 or later) or Pelican panel that Gladys can reach.
+- A **client API key** of your account on the panel: **Account → API Credentials → Create**. It
+  starts with `ptlc_`. An application key (`ptla_`, admin area) does not work. The key sees the
+  servers you own and the ones shared with you; a subuser needs the permissions of what Gladys does
+  (reading the server, power, console, activity).
 
 ## Configuration
 
-1. Open the **Configuration** tab of the integration.
-2. Set the **latitude** and **longitude** the demo weather station should
-   observe (they default to Paris), and pick your temperature unit.
-   The **refresh interval** sets how often the weather station and the
-   plug's power are read: every 5 minutes by default, every minute at most.
-3. Save: the devices appear in the **Discovery** tab, ready to be added.
+### Panel and key
 
-The **Prefer the local connection** toggle drives the demo plug: it reports
-the channel it actually uses as a badge (local or cloud), with an orange dot
-when it runs degraded (local refused, cloud fallback).
+- **Panel address**: the address you open in your browser, e.g. `https://panel.example.com` or
+  `http://192.168.1.20:8080`.
+- **Client API key (ptlc\_…)**: the key created above.
+- **Accept a self-signed certificate**: only for a panel at home in HTTPS without a public
+  certificate.
 
-## Actions
+Save: each server of your account appears in the **Discovery** tab, ready to be added. Use **Test
+the connection** to list your servers and their state.
 
-- **Test the weather provider** — performs a live request to Open-Meteo and
-  shows the current temperature and humidity under the button.
-- **Identify a device** — pick one of your devices in the list and it will
-  signal itself (the demo light "blinks" in the logs).
+### Control
 
-## Scenes
+Start, stop and restart are always allowed, as on the panel. Two risky orders are off by default:
 
-The integration adds its own cards to the scene editor (Gladys 5.1 or
-later), under the **Integrations** category:
+- **Allow killing a server**: kills the process at once, the game loses what it did not save.
+- **Allow console commands**: a scene can then type any command in the console of a server, as an
+  admin would.
 
-- **Motion detected** (trigger) — starts the scene when a demo motion sensor
-  sees something move. Optionally pick the sensor and what moved (person,
-  animal); left empty, any detection matches. The following actions can
-  read what moved with `{{triggerEvent.data.target}}`.
-- **Identify a device** (action) — makes the chosen device signal itself.
-  It returns whether the device could signal itself, so the following
-  actions can depend on it.
+### Readings
 
-## Dashboard
+- **Reading interval**: 30 seconds by default. The panel refreshes the figures of a server about
+  every 20 seconds: reading faster would show nothing new. Each reading costs one request for the
+  list and one per server, far below the limit of the panel (720 requests a minute by default).
+- **Language of the names**: of the device features and of the texts the integration writes.
 
-Add the **Demo status** widget to a dashboard: it shows the live
-temperature of the weather station and the power of the office plug, the
-connection the plug currently uses (orange when degraded) and the observed
-location. Its **Identify the light** button makes the demo light signal
-itself.
+## Devices
+
+One device per server, with:
+
+- **Power**: a switch. On while the server runs or starts; turning it on starts the server,
+  turning it off stops it cleanly (never a kill). After an order, the switch and the state show it
+  at once, until the panel confirms it.
+- **State**: Running, Starting, Stopping, Stopped, Suspended, Installing, Unreachable (the panel
+  cannot reach the node).
+- **CPU**: as the panel counts it, 100 % being one core. The gauge goes up to the CPU limit of the
+  server, or 400 % without a limit.
+- **Memory** and **Disk**: in megabytes.
+- **Uptime**: in hours, 0 when stopped.
+
+CPU and memory are sent to Gladys at most once a minute. The limits of the server (memory, disk,
+CPU) and its node are in the parameters of the device. The badge of the device tells a panel at
+home from a panel on the Internet, and shows a red dot when the panel or the node does not answer.
+
+## Dashboard widget
+
+**Game servers**: without a server chosen, a tile with the servers running and a list of your
+servers with their state, CPU and memory (nine of them, then a count). With one server chosen in
+the widget settings: its state, CPU, memory and uptime, its limits, and the buttons that fit its
+state: **Start**, or **Restart** and **Stop** (confirmed). **Kill** appears when allowed in the
+configuration and the server is stuck stopping.
+
+## Scene triggers
+
+Each one can be limited to one server, and gives the name of the server, its node and its device.
+
+- **A game server started**: it runs, after a start, a restart or a crash.
+- **A game server stopped**: on an order, from Gladys, the panel or its console (`stop`, `quit`,
+  `exit`...). With the minutes it had run.
+- **A game server crashed**: it stopped without any order. Wings usually restarts it at once:
+  this event then comes first, then **A game server started**. With the minutes it had run.
+
+How a crash is recognized: the server is stopped, or its uptime started again from zero, and
+neither Gladys nor the activity log of the panel shows a stop, kill or restart since the previous
+reading. A server shut down from inside the game (a mod, a plugin) counts as a crash. If the key
+cannot read the activity log (a subuser without that permission), a stop made from the panel counts
+as a crash too: **Test the connection** says which case you are in.
+
+## Scene actions
+
+- **Start a game server**, **Stop a game server** (clean stop), **Restart a game server**.
+- **Kill a game server**: only if allowed in the configuration.
+- **Send a console command**: only if allowed in the configuration, to a running server, e.g.
+  `say Dinner is ready!`.
+- **Read a game server**: reads it now and gives the next steps whether it runs, its state, CPU,
+  memory, disk and uptime, e.g. for a message or a "Continue only if" on running.
+
+The players are not in the API of the panel: the
+[Game Servers (GameDig)](https://github.com/guim31/gladys-gamedig) integration (gladys-gamedig)
+reads who is playing, joins and leaves, for Minecraft, Valheim and 300 more games.
+
+## Scene examples
+
+- **The kids' server at bedtime**: at 9 pm on school days, **Send a console command**
+  `say The server stops in 5 minutes!`, wait 5 minutes, **Stop a game server**.
+- **Crash alert**: trigger **A game server crashed** → send me a message with the name of the
+  server and the minutes it had run.
+- **Ready to play**: a button on the dashboard starts the server; trigger **A game server
+  started** → turn the desk lights green and send a message with the name of the server.
 
 ## Troubleshooting
 
-The integration logs everything it does: check the integration logs from the
-Gladys UI (or `docker logs` on the host) with `LOG_LEVEL=debug` for the full
-detail.
+- **"API key refused"**: the key was deleted, or it is an application key (`ptla_`): create a
+  client key in **Account → API Credentials**.
+- **"panel unreachable"**: check the address and the port from the Gladys machine; a panel behind
+  Cloudflare Access or a login page cannot be read.
+- **"certificate not trusted"**: turn on **Accept a self-signed certificate**, or use the public
+  address of the panel.
+- **State "Unreachable"**: the panel answers but cannot reach the node (Wings) of the server.
+- **No server in the Discovery tab**: the key sees no server; a subuser key only sees the servers
+  shared with it.
+- A server shows **Starting** after a start order for up to 90 seconds before the panel confirms
+  it: that is the cache of the panel.
+- The logs of the integration (Integrations → Pterodactyl / Pelican → Logs) say what failed;
+  `LOG_LEVEL=debug` shows every reading.
+
+## Limits
+
+- Readings every 30 seconds at best: a crash and its restart by Wings within one reading is seen
+  through the uptime; two crashes within one reading count as one.
+- Up to 200 servers per key.
+- No players (see gladys-gamedig), no files, backups, databases or schedules.
+- The console output is not read: only commands are sent.
+- Not affiliated with Pterodactyl or Pelican.
+
+## Credits
+
+Pterodactyl and Pelican are the work of their own teams. The API was read from their documentation
+and checked against a real panel. Code
+under the Apache 2.0 license, in the
+[repository of the integration](https://github.com/guim31/gladys-pterodactyl).
