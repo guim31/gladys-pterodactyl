@@ -1,77 +1,152 @@
+// -----------------------------------------------------------------------------
+// The `servers` widget: every server, one server with its buttons, the empty
+// and error states, the budget of the core, and the buttons' orders.
+// -----------------------------------------------------------------------------
+
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { validateWidgetContent } from '@gladysassistant/integration-sdk';
-import { createFakeGladys } from '@gladysassistant/integration-sdk/testing';
-import { buildDiscoveredDevices } from '../src/devices/index.js';
-import { simulateLanSession } from '../src/devices/plug.js';
-import { DEMO_STATUS_WIDGET, WIDGETS, refreshWidgets } from '../src/widgets.js';
-import { normalizeConfig } from '../src/config.js';
+import { WIDGET_KEY } from '../src/hub.js';
+import { formatUptime } from '../src/widgets.js';
+import { CONFIG, createAll, createWorld, deviceId, makeServer, tick } from './helpers/world.js';
 
-const gladys = createFakeGladys();
-const config = normalizeConfig();
-const demoStatus = WIDGETS[DEMO_STATUS_WIDGET];
+async function world(t, { servers, config = {} } = {}) {
+  const w = await createWorld({
+    servers: servers ?? [
+      makeServer({ name: 'Survival', state: 'running', startedAt: Date.UTC(2026, 9, 25, 14) }),
+      makeServer({ name: 'Creative' }),
+    ],
+    config: { ...CONFIG, ...config },
+  });
+  t.after(() => w.app.stop());
+  await createAll(w);
+  return w;
+}
 
-// What the SDK passes to onWidgetGet, plus the config index.js adds.
-const getContent = (cfg = config) =>
-  demoStatus.get(gladys, { settings: {}, language: 'en', units: 'metric', config: cfg });
+async function content(w, settings = {}, language = 'en') {
+  const ack = await w.fake.widgetGet(WIDGET_KEY, { settings, language });
+  assert.equal(ack.success, true, ack.error);
+  const { content: tree } = ack.data;
+  assert.deepEqual(validateWidgetContent(tree), [], 'within the core vocabulary and budget');
+  const { components } = tree;
+  assert.ok(components.length <= 8);
+  assert.ok(components.filter((c) => c.type === 'button').length <= 4);
+  assert.ok(components.filter((c) => c.type === 'value').length <= 6);
+  assert.ok(components.filter((c) => c.type === 'status').length <= 1);
+  return tree;
+}
 
-test('the demo_status content is rendered exactly as sent', async () => {
-  // [] = nothing the core would drop, truncate or trim to the content budget.
-  assert.deepEqual(validateWidgetContent(await getContent()), []);
-});
-
-test('the degraded plug connection content is valid too', async () => {
-  simulateLanSession(false);
-  try {
-    const content = await getContent();
-    assert.deepEqual(validateWidgetContent(content), []);
-    const status = content.components.find((component) => component.type === 'status');
-    assert.ok(
-      status.items.some((item) => item.color === 'warning'),
-      'degraded shows a warning',
-    );
-  } finally {
-    simulateLanSession(true);
-  }
-});
-
-test('the live tiles reference features the integration publishes', async () => {
-  const featureIds = new Set(
-    buildDiscoveredDevices(gladys, config).flatMap((device) =>
-      device.features.map((feature) => feature.external_id),
-    ),
-  );
-  const liveTiles = (await getContent()).components.filter((c) => c.device_feature);
-  assert.ok(liveTiles.length > 0, 'the template demonstrates a device-bound tile');
-  for (const tile of liveTiles) {
-    assert.ok(featureIds.has(tile.device_feature), `unknown feature ${tile.device_feature}`);
-  }
-});
-
-test('every button action of the content is handled and answers a short toast', async () => {
-  const buttons = (await getContent()).components.filter((c) => c.type === 'button' && c.action);
-  assert.ok(buttons.length > 0, 'the template demonstrates a widget action');
-  for (const { action } of buttons) {
-    const message = await demoStatus.action(gladys, {
-      actionKey: action.key,
-      params: action.params ?? {},
-      settings: {},
-      config,
-    });
-    assert.ok(message.en, 'the toast carries at least the mandatory `en` text');
-    assert.ok(message.en.length <= 200, 'toasts are capped at 200 characters');
-  }
-});
-
-test('an unknown widget action fails, so the user sees the error', async () => {
-  await assert.rejects(
-    demoStatus.action(gladys, { actionKey: 'unknown', params: {}, settings: {}, config }),
-    /Unknown widget action/,
+test('every server: running count and one row each', async (t) => {
+  const w = await world(t);
+  const { components } = await content(w);
+  assert.deepEqual(components[0], {
+    type: 'value',
+    value: '1/2',
+    label: 'Running',
+    icon: 'server',
+    color: 'success',
+  });
+  assert.deepEqual(
+    components[1].items.map((item) => [item.label, item.value, item.color]),
+    [
+      ['Survival', 'Running · 12 % · 512 MB', 'success'],
+      ['Creative', 'Stopped', 'neutral'],
+    ],
   );
 });
 
-test('refreshWidgets nudges every widget', () => {
-  const fresh = createFakeGladys();
-  refreshWidgets(fresh);
-  assert.deepEqual(fresh.fake.widgetRefreshes, Object.keys(WIDGETS));
+test('more than ten servers: nine rows and a count', async (t) => {
+  const servers = Array.from({ length: 12 }, (_, i) => makeServer({ name: `S${i}` }));
+  const w = await world(t, { servers });
+  const { components } = await content(w, {}, 'fr');
+  const rows = components[1].items;
+  assert.equal(rows.length, 10);
+  assert.deepEqual([rows[9].label, rows[9].value], ['Autres', '+3']);
+});
+
+test('one running server: figures, limits, Restart and Stop confirmed', async (t) => {
+  const w = await world(t);
+  const [survival] = w.panel.servers;
+  const { components } = await content(w, { device: deviceId(w.gladys, survival) }, 'fr');
+  const values = components.filter((c) => c.type === 'value');
+  assert.deepEqual(
+    values.map((c) => [c.label, c.value]),
+    [
+      ['État', 'Démarré'],
+      ['CPU', 12],
+      ['Mémoire', '512 MB'],
+      ['En marche depuis', '3 h 00'],
+    ],
+  );
+  const [limits] = components.find((c) => c.type === 'status').items;
+  assert.equal(limits.value, '2,0 GB · CPU 200 % · disque 10,0 GB');
+  const buttons = components.filter((c) => c.type === 'button');
+  assert.deepEqual(
+    buttons.map((b) => [b.label, b.action.key, b.action.confirm]),
+    [
+      ['Redémarrer', 'restart', true],
+      ['Arrêter', 'stop', true],
+    ],
+  );
+  assert.deepEqual(buttons[0].action.params, { server: survival.uuid });
+});
+
+test('one stopped server: a Start button; its tap starts it and says so', async (t) => {
+  const w = await world(t);
+  const creative = w.panel.servers[1];
+  const { components } = await content(w, { device: deviceId(w.gladys, creative) });
+  const buttons = components.filter((c) => c.type === 'button');
+  assert.deepEqual(
+    buttons.map((b) => b.action.key),
+    ['start'],
+  );
+  const ack = await w.fake.widgetAction(WIDGET_KEY, 'start', buttons[0].action.params, {});
+  assert.equal(ack.success, true, ack.error);
+  assert.deepEqual(ack.data.message, {
+    en: 'Start sent to Creative',
+    fr: 'Démarrage envoyé à Creative',
+    de: 'Start an Creative gesendet',
+    es: 'Arranque enviado a Creative',
+  });
+  assert.equal(creative.state, 'running');
+});
+
+test('the Kill button only when allowed, for a server stuck stopping', async (t) => {
+  for (const allowKill of [false, true]) {
+    const w = await world(t, { config: { allow_kill: allowKill } });
+    const [survival] = w.panel.servers;
+    survival.state = 'stopping';
+    await tick(w);
+    const { components } = await content(w, { device: deviceId(w.gladys, survival) });
+    const keys = components.filter((c) => c.type === 'button').map((b) => b.action.key);
+    assert.deepEqual(keys, allowKill ? ['kill'] : []);
+    const ack = await w.fake.widgetAction(WIDGET_KEY, 'kill', { server: survival.uuid }, {});
+    assert.equal(ack.success, allowKill);
+  }
+});
+
+test('the empty and error states are messages', async (t) => {
+  const missing = await createWorld({ config: { language: 'en' } });
+  t.after(() => missing.app.stop());
+  let { components } = await content(missing);
+  assert.match(components[0].text, /Enter the address of your panel/);
+
+  const w = await world(t);
+  ({ components } = await content(w, { device: 'ext:test-integration:server:gone' }));
+  assert.match(components[0].text, /no longer on the panel/);
+
+  w.panel.down = true;
+  await tick(w);
+  await tick(w);
+  ({ components } = await content(w));
+  assert.equal(
+    components[0].text,
+    'panel.example.com: panel unreachable (address, port, network?)',
+  );
+});
+
+test('the uptime, short', () => {
+  assert.equal(formatUptime(12 * 60_000, 'en'), '12 min');
+  assert.equal(formatUptime(185 * 60_000, 'en'), '3 h 05');
+  assert.equal(formatUptime((2 * 24 + 3) * 3_600_000, 'fr'), '2 j 3 h');
 });

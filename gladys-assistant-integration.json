@@ -1,177 +1,807 @@
 {
   "manifest_version": 1,
   "type": "device",
-  "name": "Demo Devices Template",
+  "name": "Pterodactyl / Pelican",
   "description": {
-    "en": "Starter template showing sensors, a switch, a dimmable light and a smart plug.",
-    "fr": "Template de démarrage : capteurs, interrupteur, lampe variable et prise connectée."
+    "en": "Pterodactyl and Pelican game servers: state, CPU, memory, start and stop, crash alerts.",
+    "fr": "Serveurs de jeu Pterodactyl et Pelican : état, CPU, mémoire, marche/arrêt, alerte de plantage.",
+    "de": "Spieleserver von Pterodactyl und Pelican: Zustand, CPU, Speicher, Start/Stopp, Absturz-Alarm.",
+    "es": "Servidores de juego Pterodactyl y Pelican: estado, CPU, memoria, arranque/parada, aviso de fallo."
   },
   "version": "1.0.0",
-  "docker_image": "ghcr.io/gladysassistant/integration-template-js:1.0.0",
+  "docker_image": "ghcr.io/guim31/gladys-pterodactyl:1.0.0",
   "gladys_version": ">=5.1.0",
-  "cover_image": "https://raw.githubusercontent.com/GladysAssistant/integration-template-js/master/cover.png",
-  "categories": ["lighting", "security", "environment"],
+  "cover_image": "https://raw.githubusercontent.com/guim31/gladys-pterodactyl/main/cover.png",
+  "categories": ["leisure", "servers"],
   "transports": ["local", "cloud"],
   "config_schema": [
     {
       "key": "intro",
       "type": "section",
-      "label": { "en": "Getting started", "fr": "Pour commencer" },
+      "label": {
+        "en": "Your game panel",
+        "fr": "Votre panneau de jeu",
+        "de": "Dein Spiele-Panel",
+        "es": "Su panel de juegos"
+      },
       "description": {
-        "en": "The demo weather station reads real data from the free Open-Meteo API: pick the coordinates to observe. No account, no API key.",
-        "fr": "La station météo de démonstration lit de vraies données via l'API gratuite Open-Meteo : choisissez les coordonnées à observer. Pas de compte, pas de clé d'API."
+        "en": "Pterodactyl or Pelican, at home or at a game host. Each server of your account becomes a device: create a client API key in Account → API Credentials of the panel.",
+        "fr": "Pterodactyl ou Pelican, à la maison ou chez un hébergeur de jeux. Chaque serveur de votre compte devient un appareil : créez une clé API client dans Compte → Identifiants API du panneau.",
+        "de": "Pterodactyl oder Pelican, zu Hause oder bei einem Spiele-Hoster. Jeder Server deines Kontos wird ein Gerät: Erstelle einen Client-API-Schlüssel unter Konto → API-Zugangsdaten im Panel.",
+        "es": "Pterodactyl o Pelican, en casa o en un proveedor de juegos. Cada servidor de su cuenta se convierte en un dispositivo: cree una clave API de cliente en Cuenta → Credenciales API del panel."
       },
       "links": [
         {
-          "url": "https://open-meteo.com/en/docs",
-          "label": { "en": "Open-Meteo documentation", "fr": "Documentation Open-Meteo" }
+          "url": "https://pterodactyl.io/",
+          "label": {
+            "en": "Pterodactyl",
+            "fr": "Pterodactyl",
+            "de": "Pterodactyl",
+            "es": "Pterodactyl"
+          }
+        },
+        {
+          "url": "https://pelican.dev/",
+          "label": {
+            "en": "Pelican",
+            "fr": "Pelican",
+            "de": "Pelican",
+            "es": "Pelican"
+          }
         }
       ]
     },
     {
-      "key": "latitude",
-      "type": "number",
-      "label": { "en": "Latitude", "fr": "Latitude" },
-      "description": {
-        "en": "Latitude used for the demo weather sensor.",
-        "fr": "Latitude utilisée par le capteur météo de démonstration."
+      "key": "panel_url",
+      "type": "string",
+      "label": {
+        "en": "Panel address",
+        "fr": "Adresse du panneau",
+        "de": "Adresse des Panels",
+        "es": "Dirección del panel"
       },
-      "placeholder": { "en": "e.g. 48.8566", "fr": "ex. 48.8566" },
+      "description": {
+        "en": "The address you open in your browser.",
+        "fr": "L'adresse que vous ouvrez dans votre navigateur.",
+        "de": "Die Adresse, die du im Browser öffnest.",
+        "es": "La dirección que abre en su navegador."
+      },
+      "placeholder": {
+        "en": "e.g. https://panel.example.com",
+        "fr": "ex. https://panel.example.com",
+        "de": "z. B. https://panel.example.com",
+        "es": "p. ej. https://panel.example.com"
+      },
       "required": true,
-      "default": 48.8566,
-      "min": -90,
-      "max": 90
+      "default": ""
     },
     {
-      "key": "longitude",
-      "type": "number",
-      "label": { "en": "Longitude", "fr": "Longitude" },
-      "description": {
-        "en": "Longitude used for the demo weather sensor.",
-        "fr": "Longitude utilisée par le capteur météo de démonstration."
+      "key": "api_key",
+      "type": "secret",
+      "label": {
+        "en": "Client API key (ptlc_…)",
+        "fr": "Clé API client (ptlc_…)",
+        "de": "Client-API-Schlüssel (ptlc_…)",
+        "es": "Clave API de cliente (ptlc_…)"
       },
-      "placeholder": { "en": "e.g. 2.3522", "fr": "ex. 2.3522" },
-      "required": true,
-      "default": 2.3522,
-      "min": -180,
-      "max": 180
+      "description": {
+        "en": "Account → API Credentials. Not an application key (ptla_) of the admin area.",
+        "fr": "Compte → Identifiants API. Pas une clé d'application (ptla_) de l'administration.",
+        "de": "Konto → API-Zugangsdaten. Kein Anwendungsschlüssel (ptla_) aus dem Admin-Bereich.",
+        "es": "Cuenta → Credenciales API. No una clave de aplicación (ptla_) de la administración."
+      },
+      "required": true
     },
     {
-      "key": "unit",
-      "type": "select",
-      "label": { "en": "Temperature unit", "fr": "Unité de température" },
+      "key": "allow_self_signed",
+      "type": "boolean",
+      "label": {
+        "en": "Accept a self-signed certificate",
+        "fr": "Accepter un certificat auto-signé",
+        "de": "Selbstsigniertes Zertifikat akzeptieren",
+        "es": "Aceptar un certificado autofirmado"
+      },
+      "description": {
+        "en": "Only for a panel at home in HTTPS without a public certificate.",
+        "fr": "Seulement pour un panneau à la maison en HTTPS sans certificat public.",
+        "de": "Nur für ein Panel zu Hause mit HTTPS ohne öffentliches Zertifikat.",
+        "es": "Solo para un panel en casa en HTTPS sin certificado público."
+      },
       "required": false,
-      "default": "celsius",
+      "default": false
+    },
+    {
+      "key": "control",
+      "type": "section",
+      "label": {
+        "en": "Control",
+        "fr": "Pilotage",
+        "de": "Steuerung",
+        "es": "Control"
+      },
+      "description": {
+        "en": "Start, stop and restart are always allowed, like on the panel. The two risky orders below are off by default.",
+        "fr": "Démarrer, arrêter et redémarrer sont toujours permis, comme sur le panneau. Les deux ordres risqués ci-dessous sont désactivés par défaut.",
+        "de": "Starten, Stoppen und Neustarten sind immer erlaubt, wie im Panel. Die zwei riskanten Befehle unten sind standardmäßig aus.",
+        "es": "Arrancar, detener y reiniciar siempre están permitidos, como en el panel. Las dos órdenes arriesgadas de abajo están desactivadas por defecto."
+      }
+    },
+    {
+      "key": "allow_kill",
+      "type": "boolean",
+      "label": {
+        "en": "Allow killing a server",
+        "fr": "Autoriser l'arrêt forcé",
+        "de": "Erzwungenen Stopp erlauben",
+        "es": "Permitir forzar la detención"
+      },
+      "description": {
+        "en": "Kills the process at once: the game loses what it did not save.",
+        "fr": "Tue le processus aussitôt : le jeu perd ce qu'il n'a pas sauvegardé.",
+        "de": "Beendet den Prozess sofort: Das Spiel verliert, was es nicht gespeichert hat.",
+        "es": "Mata el proceso al instante: el juego pierde lo que no haya guardado."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "allow_console",
+      "type": "boolean",
+      "label": {
+        "en": "Allow console commands",
+        "fr": "Autoriser les commandes console",
+        "de": "Konsolenbefehle erlauben",
+        "es": "Permitir comandos de consola"
+      },
+      "description": {
+        "en": "A scene can then type any command in the console of a server, like an admin.",
+        "fr": "Une scène peut alors taper n'importe quelle commande dans la console d'un serveur, comme un admin.",
+        "de": "Eine Szene kann dann jeden Befehl in die Konsole eines Servers eingeben, wie ein Admin.",
+        "es": "Una escena puede entonces escribir cualquier comando en la consola de un servidor, como un administrador."
+      },
+      "required": false,
+      "default": false
+    },
+    {
+      "key": "general",
+      "type": "section",
+      "label": {
+        "en": "Readings",
+        "fr": "Lectures",
+        "de": "Abfragen",
+        "es": "Lecturas"
+      }
+    },
+    {
+      "key": "poll_interval",
+      "type": "select",
+      "label": {
+        "en": "Reading interval",
+        "fr": "Intervalle de lecture",
+        "de": "Abfrageintervall",
+        "es": "Intervalo de lectura"
+      },
+      "description": {
+        "en": "The panel refreshes the figures of a server about every 20 s.",
+        "fr": "Le panneau rafraîchit les chiffres d'un serveur environ toutes les 20 s.",
+        "de": "Das Panel aktualisiert die Werte eines Servers etwa alle 20 s.",
+        "es": "El panel actualiza las cifras de un servidor cada 20 s aproximadamente."
+      },
+      "required": false,
+      "default": "30",
       "options": [
-        { "value": "celsius", "label": { "en": "Celsius", "fr": "Celsius" } },
-        { "value": "fahrenheit", "label": { "en": "Fahrenheit", "fr": "Fahrenheit" } }
+        {
+          "value": "30",
+          "label": {
+            "en": "30 seconds",
+            "fr": "30 secondes",
+            "de": "30 Sekunden",
+            "es": "30 segundos"
+          }
+        },
+        {
+          "value": "60",
+          "label": {
+            "en": "1 minute",
+            "fr": "1 minute",
+            "de": "1 Minute",
+            "es": "1 minuto"
+          }
+        },
+        {
+          "value": "120",
+          "label": {
+            "en": "2 minutes",
+            "fr": "2 minutes",
+            "de": "2 Minuten",
+            "es": "2 minutos"
+          }
+        },
+        {
+          "value": "300",
+          "label": {
+            "en": "5 minutes",
+            "fr": "5 minutes",
+            "de": "5 Minuten",
+            "es": "5 minutos"
+          }
+        }
       ]
     },
     {
-      "key": "poll_frequency",
-      "type": "number",
-      "label": { "en": "Refresh interval (s)", "fr": "Intervalle de rafraîchissement (s)" },
+      "key": "language",
+      "type": "select",
+      "label": {
+        "en": "Language of the names",
+        "fr": "Langue des noms",
+        "de": "Sprache der Namen",
+        "es": "Idioma de los nombres"
+      },
       "description": {
-        "en": "How often sensors are polled, in seconds (one minute minimum).",
-        "fr": "Fréquence d'interrogation des capteurs, en secondes (une minute minimum)."
+        "en": "Of the device features and of the texts the integration writes.",
+        "fr": "Des fonctionnalités des appareils et des textes écrits par l'intégration.",
+        "de": "Der Gerätefunktionen und der Texte, die die Integration schreibt.",
+        "es": "De las funciones de los dispositivos y de los textos que escribe la integración."
       },
       "required": false,
-      "default": 300,
-      "min": 60,
-      "max": 3600
+      "default": "fr",
+      "options": [
+        {
+          "value": "en",
+          "label": {
+            "en": "English",
+            "fr": "English",
+            "de": "English",
+            "es": "English"
+          }
+        },
+        {
+          "value": "fr",
+          "label": {
+            "en": "Français",
+            "fr": "Français",
+            "de": "Français",
+            "es": "Français"
+          }
+        },
+        {
+          "value": "de",
+          "label": {
+            "en": "Deutsch",
+            "fr": "Deutsch",
+            "de": "Deutsch",
+            "es": "Deutsch"
+          }
+        },
+        {
+          "value": "es",
+          "label": {
+            "en": "Español",
+            "fr": "Español",
+            "de": "Español",
+            "es": "Español"
+          }
+        }
+      ]
     }
   ],
   "actions": [
     {
-      "key": "test_weather",
-      "label": { "en": "Test the weather provider", "fr": "Tester le fournisseur météo" },
-      "timeout_seconds": 30
-    },
-    {
-      "key": "identify",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "fields": [
-        {
-          "key": "device",
-          "type": "select",
-          "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
-          "required": true
-        }
-      ]
+      "key": "test_connection",
+      "label": {
+        "en": "Test the connection",
+        "fr": "Tester la connexion",
+        "de": "Verbindung testen",
+        "es": "Probar la conexión"
+      },
+      "description": {
+        "en": "Reads the panel now and lists your servers with their state.",
+        "fr": "Lit le panneau maintenant et liste vos serveurs avec leur état.",
+        "de": "Liest das Panel sofort und listet deine Server mit ihrem Zustand.",
+        "es": "Lee el panel ahora y lista sus servidores con su estado."
+      },
+      "timeout_seconds": 60
     }
   ],
   "scene_triggers": [
     {
-      "key": "motion_detected",
-      "label": { "en": "Motion detected", "fr": "Mouvement détecté" },
+      "key": "server_started",
+      "label": {
+        "en": "A game server started",
+        "fr": "Un serveur de jeu a démarré",
+        "de": "Ein Spieleserver ist gestartet",
+        "es": "Un servidor de juego ha arrancado"
+      },
       "description": {
-        "en": "A demo motion sensor saw a person or an animal move.",
-        "fr": "Un détecteur de démonstration a vu bouger une personne ou un animal."
+        "en": "Running, after a start, a restart or a crash. Seen at the next reading.",
+        "fr": "Démarré, après un démarrage, un redémarrage ou un plantage. Vu à la lecture suivante.",
+        "de": "Läuft, nach einem Start, Neustart oder Absturz. Bei der nächsten Abfrage erkannt.",
+        "es": "En marcha, tras un arranque, un reinicio o un fallo. Detectado en la lectura siguiente."
       },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Sensor", "fr": "Détecteur" }
-        },
-        {
-          "key": "target",
-          "type": "multi_select",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" },
-          "options": [
-            { "value": "person", "label": { "en": "Person", "fr": "Personne" } },
-            { "value": "animal", "label": { "en": "Animal", "fr": "Animal" } }
-          ]
+          "label": {
+            "en": "Server (empty: any)",
+            "fr": "Serveur (vide : n'importe lequel)",
+            "de": "Server (leer: beliebig)",
+            "es": "Servidor (vacío: cualquiera)"
+          }
         }
       ],
       "variables": [
         {
-          "key": "target",
+          "key": "server",
           "type": "string",
-          "label": { "en": "What moved", "fr": "Ce qui a bougé" }
+          "label": {
+            "en": "Server name",
+            "fr": "Nom du serveur",
+            "de": "Name des Servers",
+            "es": "Nombre del servidor"
+          }
+        },
+        {
+          "key": "node",
+          "type": "string",
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Node",
+            "es": "Nodo"
+          }
+        },
+        {
+          "key": "device",
+          "type": "string",
+          "label": {
+            "en": "Server device",
+            "fr": "Appareil du serveur",
+            "de": "Gerät des Servers",
+            "es": "Dispositivo del servidor"
+          }
+        }
+      ]
+    },
+    {
+      "key": "server_stopped",
+      "label": {
+        "en": "A game server stopped",
+        "fr": "Un serveur de jeu s'est arrêté",
+        "de": "Ein Spieleserver wurde gestoppt",
+        "es": "Un servidor de juego se ha detenido"
+      },
+      "description": {
+        "en": "On an order: from Gladys, the panel or its console. A crash fires \"A game server crashed\" instead.",
+        "fr": "Sur un ordre : de Gladys, du panneau ou de sa console. Un plantage déclenche « Un serveur de jeu a planté » à la place.",
+        "de": "Auf einen Befehl: von Gladys, dem Panel oder seiner Konsole. Ein Absturz löst stattdessen „Ein Spieleserver ist abgestürzt“ aus.",
+        "es": "Por una orden: de Gladys, del panel o de su consola. Un fallo activa «Un servidor de juego ha fallado» en su lugar."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Server (empty: any)",
+            "fr": "Serveur (vide : n'importe lequel)",
+            "de": "Server (leer: beliebig)",
+            "es": "Servidor (vacío: cualquiera)"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "server",
+          "type": "string",
+          "label": {
+            "en": "Server name",
+            "fr": "Nom du serveur",
+            "de": "Name des Servers",
+            "es": "Nombre del servidor"
+          }
+        },
+        {
+          "key": "node",
+          "type": "string",
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Node",
+            "es": "Nodo"
+          }
+        },
+        {
+          "key": "device",
+          "type": "string",
+          "label": {
+            "en": "Server device",
+            "fr": "Appareil du serveur",
+            "de": "Gerät des Servers",
+            "es": "Dispositivo del servidor"
+          }
+        },
+        {
+          "key": "uptime_minutes",
+          "type": "number",
+          "label": {
+            "en": "Minutes it had run",
+            "fr": "Minutes de fonctionnement",
+            "de": "Gelaufene Minuten",
+            "es": "Minutos en marcha"
+          }
+        }
+      ]
+    },
+    {
+      "key": "server_crashed",
+      "label": {
+        "en": "A game server crashed",
+        "fr": "Un serveur de jeu a planté",
+        "de": "Ein Spieleserver ist abgestürzt",
+        "es": "Un servidor de juego ha fallado"
+      },
+      "description": {
+        "en": "It stopped without any order. Wings usually restarts it at once.",
+        "fr": "Il s'est arrêté sans aucun ordre. Wings le relance en général aussitôt.",
+        "de": "Er hat ohne Befehl gestoppt. Wings startet ihn meist sofort neu.",
+        "es": "Se ha detenido sin ninguna orden. Wings suele reiniciarlo al instante."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Server (empty: any)",
+            "fr": "Serveur (vide : n'importe lequel)",
+            "de": "Server (leer: beliebig)",
+            "es": "Servidor (vacío: cualquiera)"
+          }
+        }
+      ],
+      "variables": [
+        {
+          "key": "server",
+          "type": "string",
+          "label": {
+            "en": "Server name",
+            "fr": "Nom du serveur",
+            "de": "Name des Servers",
+            "es": "Nombre del servidor"
+          }
+        },
+        {
+          "key": "node",
+          "type": "string",
+          "label": {
+            "en": "Node",
+            "fr": "Nœud",
+            "de": "Node",
+            "es": "Nodo"
+          }
+        },
+        {
+          "key": "device",
+          "type": "string",
+          "label": {
+            "en": "Server device",
+            "fr": "Appareil du serveur",
+            "de": "Gerät des Servers",
+            "es": "Dispositivo del servidor"
+          }
+        },
+        {
+          "key": "uptime_minutes",
+          "type": "number",
+          "label": {
+            "en": "Minutes it had run",
+            "fr": "Minutes de fonctionnement",
+            "de": "Gelaufene Minuten",
+            "es": "Minutos en marcha"
+          }
         }
       ]
     }
   ],
   "scene_actions": [
     {
-      "key": "identify_device",
-      "label": { "en": "Identify a device", "fr": "Identifier un appareil" },
-      "description": {
-        "en": "Make a device signal itself (the demo light blinks).",
-        "fr": "Fait se signaler un appareil (la lampe de démonstration clignote)."
+      "key": "start_server",
+      "label": {
+        "en": "Start a game server",
+        "fr": "Démarrer un serveur de jeu",
+        "de": "Spieleserver starten",
+        "es": "Arrancar un servidor de juego"
       },
-      "timeout_seconds": 15,
+      "description": {
+        "en": "Like the Start button of the panel.",
+        "fr": "Comme le bouton Démarrer du panneau.",
+        "de": "Wie die Start-Taste des Panels.",
+        "es": "Como el botón Arrancar del panel."
+      },
       "fields": [
         {
           "key": "device",
           "type": "select",
           "source": "devices",
-          "label": { "en": "Device", "fr": "Appareil" },
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          },
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "stop_server",
+      "label": {
+        "en": "Stop a game server",
+        "fr": "Arrêter un serveur de jeu",
+        "de": "Spieleserver stoppen",
+        "es": "Detener un servidor de juego"
+      },
+      "description": {
+        "en": "A clean stop: the game saves first.",
+        "fr": "Un arrêt propre : le jeu sauvegarde d'abord.",
+        "de": "Ein sauberer Stopp: Das Spiel speichert zuerst.",
+        "es": "Una parada limpia: el juego guarda primero."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          },
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "restart_server",
+      "label": {
+        "en": "Restart a game server",
+        "fr": "Redémarrer un serveur de jeu",
+        "de": "Spieleserver neu starten",
+        "es": "Reiniciar un servidor de juego"
+      },
+      "description": {
+        "en": "A clean stop, then a start.",
+        "fr": "Un arrêt propre, puis un démarrage.",
+        "de": "Ein sauberer Stopp, dann ein Start.",
+        "es": "Una parada limpia y luego un arranque."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          },
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "kill_server",
+      "label": {
+        "en": "Kill a game server",
+        "fr": "Forcer l'arrêt d'un serveur de jeu",
+        "de": "Spieleserver abwürgen",
+        "es": "Forzar la detención de un servidor"
+      },
+      "description": {
+        "en": "Only if allowed in the configuration: what the game did not save is lost.",
+        "fr": "Seulement si autorisé dans la configuration : ce que le jeu n'a pas sauvegardé est perdu.",
+        "de": "Nur wenn in der Konfiguration erlaubt: Was das Spiel nicht gespeichert hat, ist verloren.",
+        "es": "Solo si está permitido en la configuración: se pierde lo que el juego no haya guardado."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          },
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "send_command",
+      "label": {
+        "en": "Send a console command",
+        "fr": "Envoyer une commande console",
+        "de": "Konsolenbefehl senden",
+        "es": "Enviar un comando de consola"
+      },
+      "description": {
+        "en": "Only if allowed in the configuration. The server must be running.",
+        "fr": "Seulement si autorisé dans la configuration. Le serveur doit être démarré.",
+        "de": "Nur wenn in der Konfiguration erlaubt. Der Server muss laufen.",
+        "es": "Solo si está permitido en la configuración. El servidor debe estar en marcha."
+      },
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          },
+          "required": true
+        },
+        {
+          "key": "command",
+          "type": "string",
+          "label": {
+            "en": "Command",
+            "fr": "Commande",
+            "de": "Befehl",
+            "es": "Comando"
+          },
+          "description": {
+            "en": "As typed in the console of the panel, e.g. say Dinner is ready!",
+            "fr": "Comme dans la console du panneau, ex. say À table !",
+            "de": "Wie in der Konsole des Panels, z. B. say Essen ist fertig!",
+            "es": "Como en la consola del panel, p. ej. say ¡A comer!"
+          },
+          "required": true
+        }
+      ]
+    },
+    {
+      "key": "read_server",
+      "label": {
+        "en": "Read a game server",
+        "fr": "Lire un serveur de jeu",
+        "de": "Spieleserver abfragen",
+        "es": "Leer un servidor de juego"
+      },
+      "description": {
+        "en": "Reads it now. Its state goes to the next steps: a message, or \"Continue only if\" on Running.",
+        "fr": "Le lit maintenant. Son état passe aux étapes suivantes : un message, ou « Continuer seulement si » sur Démarré.",
+        "de": "Liest ihn sofort. Sein Zustand geht an die nächsten Schritte: eine Nachricht oder „Nur fortfahren, wenn“ auf Läuft.",
+        "es": "Lo lee ahora. Su estado pasa a los pasos siguientes: un mensaje, o «Continuar solo si» sobre En marcha."
+      },
+      "timeout_seconds": 60,
+      "fields": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Server",
+            "fr": "Serveur",
+            "de": "Server",
+            "es": "Servidor"
+          },
           "required": true
         }
       ],
       "outputs": [
         {
-          "key": "signalled",
+          "key": "running",
           "type": "boolean",
-          "label": { "en": "Device signalled", "fr": "Appareil signalé" }
+          "label": {
+            "en": "Running",
+            "fr": "Démarré",
+            "de": "Läuft",
+            "es": "En marcha"
+          }
+        },
+        {
+          "key": "state",
+          "type": "string",
+          "label": {
+            "en": "State",
+            "fr": "État",
+            "de": "Zustand",
+            "es": "Estado"
+          }
+        },
+        {
+          "key": "cpu",
+          "type": "number",
+          "label": {
+            "en": "CPU (%)",
+            "fr": "CPU (%)",
+            "de": "CPU (%)",
+            "es": "CPU (%)"
+          }
+        },
+        {
+          "key": "memory_mb",
+          "type": "number",
+          "label": {
+            "en": "Memory (MB)",
+            "fr": "Mémoire (Mo)",
+            "de": "Arbeitsspeicher (MB)",
+            "es": "Memoria (MB)"
+          }
+        },
+        {
+          "key": "disk_mb",
+          "type": "number",
+          "label": {
+            "en": "Disk (MB)",
+            "fr": "Disque (Mo)",
+            "de": "Speicherplatz (MB)",
+            "es": "Disco (MB)"
+          }
+        },
+        {
+          "key": "uptime_minutes",
+          "type": "number",
+          "label": {
+            "en": "Minutes running",
+            "fr": "Minutes de fonctionnement",
+            "de": "Minuten in Betrieb",
+            "es": "Minutos en marcha"
+          }
+        },
+        {
+          "key": "server",
+          "type": "string",
+          "label": {
+            "en": "Server name",
+            "fr": "Nom du serveur",
+            "de": "Name des Servers",
+            "es": "Nombre del servidor"
+          }
         }
       ]
     }
   ],
   "widgets": [
     {
-      "key": "demo_status",
-      "label": { "en": "Demo status", "fr": "État de la démo" },
-      "description": {
-        "en": "Live temperature and plug power, plug connection and observed location.",
-        "fr": "Température et puissance en direct, connexion de la prise, position observée."
+      "key": "servers",
+      "label": {
+        "en": "Game servers",
+        "fr": "Serveurs de jeu",
+        "de": "Spieleserver",
+        "es": "Servidores de juego"
       },
-      "icon": "activity",
-      "action_timeout_seconds": 15
+      "description": {
+        "en": "Your servers and their state; one server with its figures and Start / Stop buttons.",
+        "fr": "Vos serveurs et leur état ; un serveur avec ses chiffres et les boutons Démarrer / Arrêter.",
+        "de": "Deine Server und ihr Zustand; ein Server mit seinen Werten und Start-/Stopp-Tasten.",
+        "es": "Sus servidores y su estado; un servidor con sus cifras y los botones Arrancar / Detener."
+      },
+      "icon": "server",
+      "action_timeout_seconds": 30,
+      "settings": [
+        {
+          "key": "device",
+          "type": "select",
+          "source": "devices",
+          "label": {
+            "en": "Server (empty: all)",
+            "fr": "Serveur (vide : tous)",
+            "de": "Server (leer: alle)",
+            "es": "Servidor (vacío: todos)"
+          },
+          "required": false
+        }
+      ]
     }
   ]
 }

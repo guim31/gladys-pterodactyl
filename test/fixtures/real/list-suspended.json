@@ -1,0 +1,170 @@
+{
+  "status": 200,
+  "body": {
+    "object": "list",
+    "data": [
+      {
+        "object": "server",
+        "attributes": {
+          "server_owner": true,
+          "identifier": "88e742d1",
+          "__deprecated_uuid_short": "88e742d1",
+          "server_identifier": "serv_rdtufuj3rrez5gqfhfhn2vqihq",
+          "internal_id": 1,
+          "uuid": "88e742d1-3b8c-499e-9a05-394edd56083c",
+          "name": "Survival",
+          "node": "node1",
+          "is_node_under_maintenance": false,
+          "sftp_details": {
+            "ip": "node.example.com",
+            "port": 2022
+          },
+          "description": "test",
+          "limits": {
+            "memory": 256,
+            "swap": 0,
+            "disk": 1024,
+            "io": 500,
+            "cpu": 50,
+            "threads": null,
+            "oom_disabled": true
+          },
+          "invocation": "trap \"echo Server stopping; exit 0\" INT TERM; echo \"Server listening on 0.0.0.0:25565\"; while true; do if read -r line; then echo \"> $line\"; [ \"$line\" = crash ] && exit 3; else sleep 1; fi; done",
+          "docker_image": "ghcr.io/parkervcp/yolks:alpine",
+          "egg_features": null,
+          "feature_limits": {
+            "databases": 0,
+            "allocations": 1,
+            "backups": 0
+          },
+          "status": null,
+          "is_suspended": false,
+          "is_installing": false,
+          "is_transferring": false,
+          "skip_scripts": true,
+          "relationships": {
+            "allocations": {
+              "object": "list",
+              "data": [
+                {
+                  "object": "allocation",
+                  "attributes": {
+                    "id": 1,
+                    "ip": "0.0.0.0",
+                    "ip_alias": null,
+                    "port": 25565,
+                    "notes": null,
+                    "is_default": true
+                  }
+                }
+              ]
+            },
+            "variables": {
+              "object": "list",
+              "data": [
+                {
+                  "object": "egg_variable",
+                  "attributes": {
+                    "name": "Maximum Users",
+                    "description": "Maximum concurrent users on the mumble server.",
+                    "env_variable": "MAX_USERS",
+                    "default_value": "100",
+                    "server_value": "10",
+                    "is_editable": false,
+                    "rules": "required|numeric|digits_between:1,5"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      },
+      {
+        "object": "server",
+        "attributes": {
+          "server_owner": true,
+          "identifier": "5e23fe4c",
+          "__deprecated_uuid_short": "5e23fe4c",
+          "server_identifier": "serv_lyr74tcggjgapgp2l4asrkya2m",
+          "internal_id": 2,
+          "uuid": "5e23fe4c-4632-4c07-99fa-5f0128ab00d3",
+          "name": "Creative",
+          "node": "node1",
+          "is_node_under_maintenance": false,
+          "sftp_details": {
+            "ip": "node.example.com",
+            "port": 2022
+          },
+          "description": "test",
+          "limits": {
+            "memory": 0,
+            "swap": 0,
+            "disk": 0,
+            "io": 500,
+            "cpu": 0,
+            "threads": null,
+            "oom_disabled": true
+          },
+          "invocation": "trap \"echo Server stopping; exit 0\" INT TERM; echo \"Server listening on 0.0.0.0:25566\"; while true; do if read -r line; then echo \"> $line\"; [ \"$line\" = crash ] && exit 3; else sleep 1; fi; done",
+          "docker_image": "ghcr.io/parkervcp/yolks:alpine",
+          "egg_features": null,
+          "feature_limits": {
+            "databases": 0,
+            "allocations": 1,
+            "backups": 0
+          },
+          "status": "suspended",
+          "is_suspended": true,
+          "is_installing": false,
+          "is_transferring": false,
+          "skip_scripts": true,
+          "relationships": {
+            "allocations": {
+              "object": "list",
+              "data": [
+                {
+                  "object": "allocation",
+                  "attributes": {
+                    "id": 2,
+                    "ip": "0.0.0.0",
+                    "ip_alias": null,
+                    "port": 25566,
+                    "notes": null,
+                    "is_default": true
+                  }
+                }
+              ]
+            },
+            "variables": {
+              "object": "list",
+              "data": [
+                {
+                  "object": "egg_variable",
+                  "attributes": {
+                    "name": "Maximum Users",
+                    "description": "Maximum concurrent users on the mumble server.",
+                    "env_variable": "MAX_USERS",
+                    "default_value": "100",
+                    "server_value": "10",
+                    "is_editable": false,
+                    "rules": "required|numeric|digits_between:1,5"
+                  }
+                }
+              ]
+            }
+          }
+        }
+      }
+    ],
+    "meta": {
+      "pagination": {
+        "total": 2,
+        "count": 2,
+        "per_page": 50,
+        "current_page": 1,
+        "total_pages": 1,
+        "links": {}
+      }
+    }
+  }
+}

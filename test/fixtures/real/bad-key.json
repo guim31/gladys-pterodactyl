@@ -1,0 +1,12 @@
+{
+  "status": 401,
+  "body": {
+    "errors": [
+      {
+        "code": "AuthenticationException",
+        "status": "401",
+        "detail": "Unauthenticated."
+      }
+    ]
+  }
+}

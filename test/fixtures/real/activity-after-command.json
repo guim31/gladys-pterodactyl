@@ -1,0 +1,48 @@
+{
+  "status": 200,
+  "body": {
+    "object": "list",
+    "data": [
+      {
+        "object": "activity_log",
+        "attributes": {
+          "id": "77de68daecd823babbb58edb1c8e14d7106e83bb",
+          "batch": null,
+          "event": "server:console.command",
+          "is_api": true,
+          "ip": "192.0.2.10",
+          "description": null,
+          "properties": {
+            "command": "say hello"
+          },
+          "has_additional_metadata": false,
+          "timestamp": "2026-10-25T10:59:31+00:00"
+        }
+      },
+      {
+        "object": "activity_log",
+        "attributes": {
+          "id": "da4b9237bacccdf19c0760cab7aec4a8359010b0",
+          "batch": null,
+          "event": "server:power.start",
+          "is_api": true,
+          "ip": "192.0.2.10",
+          "description": null,
+          "properties": {},
+          "has_additional_metadata": false,
+          "timestamp": "2026-10-25T10:59:11+00:00"
+        }
+      }
+    ],
+    "meta": {
+      "pagination": {
+        "total": 2,
+        "count": 2,
+        "per_page": 25,
+        "current_page": 1,
+        "total_pages": 1,
+        "links": {}
+      }
+    }
+  }
+}

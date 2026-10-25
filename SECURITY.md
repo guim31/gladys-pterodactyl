@@ -30,6 +30,15 @@ Gladys before reporting a problem.
 
 In scope: the code of this repository and the Docker image it publishes.
 
+The integration stores nothing in `/data`. Its configuration (kept by
+Gladys) holds the address of the panel and a client API key: the key is only
+sent to that panel, in the `Authorization` header, and never written to the
+logs; the console commands a scene sends are not logged either (they may hold
+a password). The key can do on the panel what its account can do: create a
+dedicated key, and a subuser with only the permissions needed if you want
+less. The container only opens outgoing HTTP(S) connections to the panel and
+to Gladys. Killing a server and console commands are off by default.
+
 Out of scope: Gladys Assistant itself (see its
 [security policy](https://github.com/GladysAssistant/Gladys/security/policy)),
-and the third-party services and devices the integration talks to.
+and the Pterodactyl or Pelican panel, its nodes and its game servers.

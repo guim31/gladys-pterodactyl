@@ -1,0 +1,92 @@
+{
+  "status": 200,
+  "body": {
+    "object": "list",
+    "data": [
+      {
+        "object": "activity_log",
+        "attributes": {
+          "id": "c1dfd96eea8cc2b62785275bca38ac261256e278",
+          "batch": null,
+          "event": "server:console.command",
+          "is_api": true,
+          "ip": "192.0.2.10",
+          "description": null,
+          "properties": {
+            "command": "crash"
+          },
+          "has_additional_metadata": false,
+          "timestamp": "2026-10-25T11:01:41+00:00"
+        }
+      },
+      {
+        "object": "activity_log",
+        "attributes": {
+          "id": "ac3478d69a3c81fa62e60f5c3696165a4e5e6ac4",
+          "batch": null,
+          "event": "server:power.start",
+          "is_api": true,
+          "ip": "192.0.2.10",
+          "description": null,
+          "properties": {},
+          "has_additional_metadata": false,
+          "timestamp": "2026-10-25T11:00:26+00:00"
+        }
+      },
+      {
+        "object": "activity_log",
+        "attributes": {
+          "id": "1b6453892473a467d07372d45eb05abc2031647a",
+          "batch": null,
+          "event": "server:power.stop",
+          "is_api": true,
+          "ip": "192.0.2.10",
+          "description": null,
+          "properties": {},
+          "has_additional_metadata": false,
+          "timestamp": "2026-10-25T10:59:53+00:00"
+        }
+      },
+      {
+        "object": "activity_log",
+        "attributes": {
+          "id": "77de68daecd823babbb58edb1c8e14d7106e83bb",
+          "batch": null,
+          "event": "server:console.command",
+          "is_api": true,
+          "ip": "192.0.2.10",
+          "description": null,
+          "properties": {
+            "command": "say hello"
+          },
+          "has_additional_metadata": false,
+          "timestamp": "2026-10-25T10:59:31+00:00"
+        }
+      },
+      {
+        "object": "activity_log",
+        "attributes": {
+          "id": "da4b9237bacccdf19c0760cab7aec4a8359010b0",
+          "batch": null,
+          "event": "server:power.start",
+          "is_api": true,
+          "ip": "192.0.2.10",
+          "description": null,
+          "properties": {},
+          "has_additional_metadata": false,
+          "timestamp": "2026-10-25T10:59:11+00:00"
+        }
+      }
+    ],
+    "meta": {
+      "pagination": {
+        "total": 5,
+        "count": 5,
+        "per_page": 25,
+        "current_page": 1,
+        "total_pages": 1,
+        "links": {}
+      }
+    }
+  }
+}
